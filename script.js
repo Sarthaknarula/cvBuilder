@@ -1,16 +1,17 @@
 let activeTemplateId = '';
 let activeTemplateLatex = '';
 let removedCoreSections = [];
-let customSectionCounter = 0; // Starts at 0 now
+let customSectionCounter = 0; 
 
 // --- 1. INITIALIZE TEMPLATES ---
-window.onload = function() {
+document.addEventListener('DOMContentLoaded', () => {
+    const grid = document.getElementById('template-grid');
+    
     if (!window.resumeTemplates || window.resumeTemplates.length === 0) {
-        document.getElementById('template-grid').innerHTML = `<p style="color:red; text-align:center;">Error: Could not load templates. Make sure templates.js exists and is linked properly!</p>`;
+        grid.innerHTML = `<p style="color:red; text-align:center; font-weight:bold;">Error: Could not load templates.<br>Check if your 'templates' folder and .js files are named correctly!</p>`;
         return;
     }
 
-    const grid = document.getElementById('template-grid');
     grid.innerHTML = ''; 
 
     window.resumeTemplates.forEach(template => {
@@ -39,12 +40,12 @@ window.onload = function() {
 
     addProject('E-Commerce Platform | React, Firebase', '', 'Architected a full-stack e-commerce solution with real-time inventory management.');
     addProject('Data Visualization Dashboard | Python, D3.js', '', 'Built an interactive dashboard to visualize large-scale financial datasets.');
-};
+});
 
+// --- NAVIGATION ---
 function openBuilder(templateId) {
     activeTemplateId = templateId; 
     activeTemplateLatex = window.resumeTemplates.find(t => t.id === templateId).latexCode;
-    
     document.getElementById('selection-screen').style.display = 'none';
     document.getElementById('builder-screen').style.display = 'flex';
     document.getElementById('output').value = '';
@@ -144,7 +145,6 @@ function toggleAddMenu(event, btn) {
     });
     
     menu.innerHTML += `<button type="button" class="custom-add-btn" onclick="spawnCustomBlock()">+ Create New Custom Section</button>`;
-    
     menu.style.display = 'flex';
 }
 
@@ -175,7 +175,6 @@ function addDescLine(btn) {
     container.insertAdjacentHTML('beforeend', html);
 }
 
-
 // --- DYNAMIC FIELDS UI GENERATORS ---
 function addEducation(isCompulsory = false, deg='', yr='', inst='', score='') {
     const removeBtn = isCompulsory ? '' : `<button type="button" class="btn-remove" onclick="this.parentElement.remove()">Remove Item</button>`;
@@ -183,8 +182,8 @@ function addEducation(isCompulsory = false, deg='', yr='', inst='', score='') {
         <div class="section-block edu-item">
             ${removeBtn}
             <div class="flex-row">
-                <div><label>Degree/Cert</label><input type="text" class="e-deg" value="${deg}" required></div>
-                <div><label>Year</label><input type="text" class="e-yr" value="${yr}" required></div>
+                <div><label>Degree/Cert</label><input type="text" class="e-deg" value="${deg}"></div>
+                <div><label>Year</label><input type="text" class="e-yr" value="${yr}"></div>
             </div>
             <div class="flex-row">
                 <div><label>Institution</label><input type="text" class="e-inst" value="${inst}"></div>
@@ -348,30 +347,26 @@ function addCustomItem(blockId) {
     container.insertAdjacentHTML('beforeend', html);
 }
 
-// --- UNIVERSAL TEXT FORMATTER (UPDATED FOR PERFECT SPACING) ---
+// --- UNIVERSAL TEXT FORMATTER ---
 function formatText(linesArray, formatType, templateId) {
     if (!linesArray || linesArray.length === 0) return '';
 
-    // RULE: If only 1 line, OR if "paragraph" is selected, format as standard text blocks.
     if (linesArray.length === 1 || formatType === 'paragraph') {
         let joinedText = linesArray.map(l => escapeLatex(l)).join(' \\\\[3pt]\n');
-        
         if (templateId === 'tpl-professional') {
-            // Invisible list trick to force perfect spacing matching the bullet points
             return `\\begin{itemize}[leftmargin=0in, label={}, itemsep=0pt, topsep=3pt, parsep=0pt, partopsep=0pt]\n  \\item \\small{${joinedText}}\n\\end{itemize}`;
         } else {
             return `\\vspace{2pt}\n${joinedText}`;
         }
     }
 
-    // MULTIPLE LINES FORMATTING
     if (formatType === 'numbers') {
         if (templateId === 'tpl-professional') {
             return '\\begin{enumerate}[leftmargin=0.20in,itemsep=0pt,topsep=3pt,parsep=0pt,partopsep=0pt]\n' + linesArray.map(l => `  \\item \\small{${escapeLatex(l)}}`).join('\n') + '\n\\end{enumerate}';
         } else {
             return '\\begin{enumerate}\n' + linesArray.map(l => `  \\item ${escapeLatex(l)}`).join('\n') + '\n\\end{enumerate}';
         }
-    } else { // 'bullets'
+    } else { 
         if (templateId === 'tpl-professional') {
             return '\\resumeItemListStart\n' + linesArray.map(l => `  \\resumeItem{${escapeLatex(l)}}`).join('\n') + '\n\\resumeItemListEnd';
         } else {
@@ -518,7 +513,7 @@ function getAchievementLatex(block) {
     let format = block.querySelector('#ach-format').value;
     
     if (descLines.length === 0) return '';
-    if (activeTemplateId === 'tpl-professional') return `%—— ${upperTitle} ——\n\\section{${secTitle}}\n\\resumeSubHeadingList\n${formatText(descLines, format, activeTemplateId)}\n\\resumeSubHeadingListEnd\n\n`;
+    if (activeTemplateId === 'tpl-professional') return `%—— ${upperTitle} ——\n\\section{${secTitle}}\n${formatText(descLines, format, activeTemplateId)}\n\n`;
     else return `%—— ${upperTitle} ——\n\\Section{${upperTitle}}\n${formatText(descLines, format, activeTemplateId)}\n\n`;
 }
 
@@ -564,6 +559,8 @@ function getCustomLatex(block) {
                 if (heading || date) {
                     let hText = heading ? `\\textbf{${heading}}` : '';
                     latex += `  \\vspace{-1pt}\\item[]\n  \\begin{tabular*}{0.97\\textwidth}[t]{l@{\\extracolsep{\\fill}}r}\n    ${hText} & ${date} \\\\\n  \\end{tabular*}\\vspace{-6pt}\n`;
+                } else {
+                    latex += `  \\item[]\n`;
                 }
                 if (descLines.length > 0) latex += formatText(descLines, format, activeTemplateId) + '\n';
             } else {
@@ -583,27 +580,78 @@ function getCustomLatex(block) {
     return latex;
 }
 
-// --- SUBMIT COMPILER ---
-document.addEventListener('DOMContentLoaded', () => {
-    document.getElementById('resumeForm').addEventListener('submit', function(e) {
-        e.preventDefault();
+// --- CENTRALIZED BUILDER FUNCTION ---
+function getCompiledLatex() {
+    let bodyLatex = '';
+    document.querySelectorAll('#builder-canvas .draggable-section').forEach(block => {
+        if (block.style.display === 'none') return;
         
-        let bodyLatex = '';
-
-        document.querySelectorAll('#builder-canvas .draggable-section').forEach(block => {
-            if (block.style.display === 'none') return;
-            
-            let type = block.getAttribute('data-type');
-            if(type === 'header') bodyLatex += getHeaderLatex(block);
-            else if(type === 'education') bodyLatex += getEducationLatex(block);
-            else if(type === 'work') bodyLatex += getWorkLatex(block);
-            else if(type === 'project') bodyLatex += getProjectLatex(block);
-            else if(type === 'achievement') bodyLatex += getAchievementLatex(block);
-            else if(type === 'skill') bodyLatex += getSkillLatex(block);
-            else if(type === 'custom') bodyLatex += getCustomLatex(block);
-        });
-
-        let compiledCode = activeTemplateLatex.replace('{{RESUME_BODY}}', bodyLatex.trim());
-        document.getElementById('output').value = compiledCode.replace(/\n\s*\n/g, '\n\n').trim();
+        let type = block.getAttribute('data-type');
+        if(type === 'header') bodyLatex += getHeaderLatex(block);
+        else if(type === 'education') bodyLatex += getEducationLatex(block);
+        else if(type === 'work') bodyLatex += getWorkLatex(block);
+        else if(type === 'project') bodyLatex += getProjectLatex(block);
+        else if(type === 'achievement') bodyLatex += getAchievementLatex(block);
+        else if(type === 'skill') bodyLatex += getSkillLatex(block);
+        else if(type === 'custom') bodyLatex += getCustomLatex(block);
     });
+
+    let compiledCode = activeTemplateLatex.replace('{{RESUME_BODY}}', bodyLatex.trim());
+    return compiledCode.replace(/\n\s*\n/g, '\n\n').trim();
+}
+
+// --- BUTTON EVENT LISTENERS ---
+document.addEventListener('DOMContentLoaded', () => {
+    const btnGenerate = document.getElementById('btn-generate');
+    const btnDownload = document.getElementById('btn-download');
+
+    if (btnGenerate) {
+        btnGenerate.addEventListener('click', () => {
+            const compiledCode = getCompiledLatex();
+            document.getElementById('output').value = compiledCode;
+        });
+    }
+
+    if (btnDownload) {
+        btnDownload.addEventListener('click', async () => {
+            const compiledCode = getCompiledLatex();
+            document.getElementById('output').value = compiledCode; // Update UI as well
+
+            const originalBtnText = btnDownload.innerText;
+            btnDownload.innerText = "Compiling PDF...";
+            btnDownload.disabled = true;
+            btnDownload.style.backgroundColor = "#218838"; // Darker green while compiling
+
+            try {
+                const response = await fetch('http://localhost:3000/api/compile-pdf', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ latex: compiledCode })
+                });
+
+                if (!response.ok) {
+                    const errData = await response.json();
+                    throw new Error(errData.error || 'Failed to compile PDF');
+                }
+
+                const blob = await response.blob();
+                const downloadUrl = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = downloadUrl;
+                a.download = 'My_Resume.pdf'; 
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                window.URL.revokeObjectURL(downloadUrl);
+
+            } catch (error) {
+                console.error(error);
+                alert("Error compiling PDF. Make sure your Node.js server is running on localhost:3000.");
+            } finally {
+                btnDownload.innerText = originalBtnText;
+                btnDownload.disabled = false;
+                btnDownload.style.backgroundColor = "#28a745"; // Reset to green
+            }
+        });
+    }
 });
