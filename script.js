@@ -3,30 +3,42 @@ let activeTemplateLatex = '';
 let removedCoreSections = [];
 let customSectionCounter = 0; 
 
-// --- 1. INITIALIZE TEMPLATES ---
-document.addEventListener('DOMContentLoaded', () => {
+// --- 1. INITIALIZE TEMPLATES FROM DATABASE ---
+document.addEventListener('DOMContentLoaded', async () => {
     const grid = document.getElementById('template-grid');
-    
-    if (!window.resumeTemplates || window.resumeTemplates.length === 0) {
-        grid.innerHTML = `<p style="color:red; text-align:center; font-weight:bold;">Error: Could not load templates.<br>Check if your 'templates' folder and .js files are named correctly!</p>`;
-        return;
-    }
+    grid.innerHTML = '<p>Loading templates from database...</p>';
 
-    grid.innerHTML = ''; 
+    try {
+        // Fetch from our new PostgreSQL backend route
+        const response = await fetch('http://localhost:3000/api/templates');
+        const dbTemplates = await response.json();
+        
+        window.resumeTemplates = dbTemplates;
+        grid.innerHTML = ''; 
 
-    window.resumeTemplates.forEach(template => {
-        const cardHTML = `
-            <div class="template-card" onclick="openBuilder('${template.id}')">
-                <div class="preview-wrapper">
-                    ${template.previewHtml}
+        if (window.resumeTemplates.length === 0) {
+            grid.innerHTML = `<p style="color:red;">No templates found in the database.</p>`;
+            return;
+        }
+
+        window.resumeTemplates.forEach(template => {
+            const cardHTML = `
+                <div class="template-card" onclick="openBuilder('${template.id}')">
+                    <div class="preview-wrapper">
+                        ${template.preview_html}
+                    </div>
+                    <div class="template-title">${template.title}</div>
+                    <div class="template-desc">${template.description}</div>
+                    <button class="btn-primary" style="margin-top:0; padding: 10px; width: 80%;">Select Template</button>
                 </div>
-                <div class="template-title">${template.title}</div>
-                <div class="template-desc">${template.desc}</div>
-                <button class="btn-primary" style="margin-top:0; padding: 10px; width: 80%;">Select Template</button>
-            </div>
-        `;
-        grid.insertAdjacentHTML('beforeend', cardHTML);
-    });
+            `;
+            grid.insertAdjacentHTML('beforeend', cardHTML);
+        });
+
+    } catch (error) {
+        console.error("Database fetch error:", error);
+        grid.innerHTML = `<p style="color:red; text-align:center; font-weight:bold;">Error: Could not connect to the database.<br>Make sure PostgreSQL is running and credentials are correct.</p>`;
+    }
 
     // Initialize default form data
     addEducation(true, 'B.S. Computer Science', '2019 - 2023', 'University of Technology', '3.90 GPA');
@@ -42,10 +54,10 @@ document.addEventListener('DOMContentLoaded', () => {
     addProject('Data Visualization Dashboard | Python, D3.js', '', 'Built an interactive dashboard to visualize large-scale financial datasets.');
 });
 
-// --- NAVIGATION ---
 function openBuilder(templateId) {
     activeTemplateId = templateId; 
-    activeTemplateLatex = window.resumeTemplates.find(t => t.id === templateId).latexCode;
+    // IMPORTANT: db returns latex_code, not latexCode
+    activeTemplateLatex = window.resumeTemplates.find(t => t.id === templateId).latex_code; 
     document.getElementById('selection-screen').style.display = 'none';
     document.getElementById('builder-screen').style.display = 'flex';
     document.getElementById('output').value = '';

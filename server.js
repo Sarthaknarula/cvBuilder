@@ -1,20 +1,41 @@
+require('dotenv').config();
+
 const express = require('express');
 const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
 const { exec } = require('child_process');
 const crypto = require('crypto');
+const { Pool } = require('pg'); // <-- NEW: Import pg
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
-
-// Serve frontend files (HTML, CSS, JS)
 app.use(express.static(__dirname));
 
-// PDF Compilation Endpoint
+// --- NEW: Database Connection ---
+const pool = new Pool({
+    user: 'postgres',
+    host: 'localhost',
+    database: 'cvbuilder',
+    password: process.env.DB_PASSWORD,
+    port: 5432,
+});
+
+// --- NEW: API Endpoint to fetch templates ---
+app.get('/api/templates', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT * FROM templates ORDER BY title ASC');
+        res.json(result.rows);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Database connection failed' });
+    }
+});
+
+// --- PDF Compilation Endpoint (Remains exactly the same) ---
 app.post('/api/compile-pdf', (req, res) => {
     const latexString = req.body.latex;
 
@@ -32,18 +53,17 @@ app.post('/api/compile-pdf', (req, res) => {
 
     fs.writeFileSync(texFilePath, latexString);
 
-    // Run pdflatex compiler
     const command = `pdflatex -interaction=nonstopmode -halt-on-error resume.tex`;
 
     exec(command, { cwd: tempDir }, (error, stdout, stderr) => {
         if (fs.existsSync(pdfFilePath)) {
             res.download(pdfFilePath, 'Resume.pdf', (err) => {
                 if (err) console.error('Error sending file:', err);
-                fs.rmSync(tempDir, { recursive: true, force: true }); // Cleanup
+                fs.rmSync(tempDir, { recursive: true, force: true });
             });
         } else {
             console.error('LaTeX Compilation Error:', stdout);
-            fs.rmSync(tempDir, { recursive: true, force: true }); // Cleanup
+            fs.rmSync(tempDir, { recursive: true, force: true });
             res.status(500).json({ error: 'LaTeX compilation failed.', details: stdout });
         }
     });
