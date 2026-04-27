@@ -1,8 +1,10 @@
+// This file is used to link with the databse, here postgre sql
+
+// configuring the .env file
 require('dotenv').config();
 
 const { Pool } = require('pg');
 
-// UPDATE THIS WITH YOUR POSTGRES PASSWORD
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
     ssl: {
@@ -192,7 +194,6 @@ const templates = [
 
 async function seedDatabase() {
     try {
-        // Create the table
         await pool.query(`
             CREATE TABLE IF NOT EXISTS templates (
                 id VARCHAR(50) PRIMARY KEY,
@@ -204,7 +205,7 @@ async function seedDatabase() {
         `);
         console.log("✅ Table 'templates' created/verified.");
 
-        // Clear existing data so we don't duplicate
+        // Delete current data before loading new
         await pool.query('DELETE FROM templates;');
 
         // Insert the templates
@@ -214,12 +215,12 @@ async function seedDatabase() {
                  VALUES ($1, $2, $3, $4, $5)`,
                 [tpl.id, tpl.title, tpl.desc, tpl.preview_html, tpl.latex_code]
             );
-            console.log(`✅ Inserted template: ${tpl.title}`);
+            console.log(`Inserted template: ${tpl.title}`);
         }
         
-        console.log("🎉 Seeding complete! You can now safely delete your old 'templates' folder.");
+        console.log("Seeding complete! You can now safely delete your old 'templates' folder.");
     } catch (err) {
-        console.error("❌ Seeding error:", err);
+        console.error("Seeding error:", err);
     } finally {
         pool.end();
     }

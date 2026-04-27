@@ -1,15 +1,16 @@
+//  Used to do fronend communications
+
 let activeTemplateId = '';
 let activeTemplateLatex = '';
 let removedCoreSections = [];
 let customSectionCounter = 0; 
 
-// --- 1. INITIALIZE TEMPLATES FROM DATABASE ---
+
 document.addEventListener('DOMContentLoaded', async () => {
     const grid = document.getElementById('template-grid');
     grid.innerHTML = '<p>Loading templates from database...</p>';
 
     try {
-        // Fetch from our new PostgreSQL backend route
         const response = await fetch('/api/templates');
         const dbTemplates = await response.json();
         
@@ -40,7 +41,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         grid.innerHTML = `<p style="color:red; text-align:center; font-weight:bold;">Error: Could not connect to the database.<br>Make sure PostgreSQL is running and credentials are correct.</p>`;
     }
 
-    // Initialize default form data
     addEducation(true, 'B.S. Computer Science', '2019 - 2023', 'University of Technology', '3.90 GPA');
     addEducation(false, 'High School Diploma', '2015 - 2019', 'Springfield High School', '98%');
     
@@ -56,7 +56,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 function openBuilder(templateId) {
     activeTemplateId = templateId; 
-    // IMPORTANT: db returns latex_code, not latexCode
     activeTemplateLatex = window.resumeTemplates.find(t => t.id === templateId).latex_code; 
     document.getElementById('selection-screen').style.display = 'none';
     document.getElementById('builder-screen').style.display = 'flex';
@@ -68,13 +67,11 @@ function goBackToSelection() {
     document.getElementById('selection-screen').style.display = 'block';
 }
 
-// --- COLLAPSE LOGIC ---
 function toggleSection(element) {
     const section = element.closest('.draggable-section');
     section.classList.toggle('collapsed');
 }
 
-// --- DRAG AND DROP ENGINE ---
 document.addEventListener('dragstart', e => {
     if (e.target.classList && e.target.classList.contains('draggable-section')) {
         e.target.classList.add('dragging');
@@ -117,7 +114,6 @@ function getDragAfterElement(container, y) {
     }, { offset: Number.NEGATIVE_INFINITY }).element;
 }
 
-// --- OPTIONAL DURATION TOGGLE UI LOGIC ---
 function toggleDate(btn, show) {
     const item = btn.closest('.custom-item');
     const wrapper = item.querySelector('.date-wrapper');
@@ -133,7 +129,6 @@ function toggleDate(btn, show) {
     }
 }
 
-// --- REMOVE / RESTORE UI LOGIC ---
 function removeCoreSection(sectionId, sectionName) {
     const section = document.getElementById(sectionId);
     section.style.display = 'none';
@@ -175,7 +170,6 @@ document.addEventListener('click', function(e) {
     }
 });
 
-// --- NEW DYNAMIC LINE ENGINE ---
 function addDescLine(btn) {
     const container = btn.previousElementSibling;
     const html = `
@@ -187,7 +181,6 @@ function addDescLine(btn) {
     container.insertAdjacentHTML('beforeend', html);
 }
 
-// --- DYNAMIC FIELDS UI GENERATORS ---
 function addEducation(isCompulsory = false, deg='', yr='', inst='', score='') {
     const removeBtn = isCompulsory ? '' : `<button type="button" class="btn-remove" onclick="this.parentElement.remove()">Remove Item</button>`;
     const html = `
@@ -359,7 +352,6 @@ function addCustomItem(blockId) {
     container.insertAdjacentHTML('beforeend', html);
 }
 
-// --- UNIVERSAL TEXT FORMATTER ---
 function formatText(linesArray, formatType, templateId) {
     if (!linesArray || linesArray.length === 0) return '';
 
@@ -387,7 +379,6 @@ function formatText(linesArray, formatType, templateId) {
     }
 }
 
-// --- LATEX COMPILER ENGINE ---
 function escapeLatex(str) {
     if (!str) return '';
     return str.replace(/%/g, '\\%').replace(/&/g, '\\&').replace(/\$/g, '\\$').replace(/#/g, '\\#');
@@ -592,7 +583,6 @@ function getCustomLatex(block) {
     return latex;
 }
 
-// --- CENTRALIZED BUILDER FUNCTION ---
 function getCompiledLatex() {
     let bodyLatex = '';
     document.querySelectorAll('#builder-canvas .draggable-section').forEach(block => {
@@ -612,7 +602,6 @@ function getCompiledLatex() {
     return compiledCode.replace(/\n\s*\n/g, '\n\n').trim();
 }
 
-// --- BUTTON EVENT LISTENERS ---
 document.addEventListener('DOMContentLoaded', () => {
     const btnGenerate = document.getElementById('btn-generate');
     const btnDownload = document.getElementById('btn-download');
@@ -627,12 +616,12 @@ document.addEventListener('DOMContentLoaded', () => {
     if (btnDownload) {
         btnDownload.addEventListener('click', async () => {
             const compiledCode = getCompiledLatex();
-            document.getElementById('output').value = compiledCode; // Update UI as well
+            document.getElementById('output').value = compiledCode; 
 
             const originalBtnText = btnDownload.innerText;
             btnDownload.innerText = "Compiling PDF...";
             btnDownload.disabled = true;
-            btnDownload.style.backgroundColor = "#218838"; // Darker green while compiling
+            btnDownload.style.backgroundColor = "#218838"; 
 
             try {
                 const response = await fetch('/api/compile-pdf', {
@@ -662,7 +651,7 @@ document.addEventListener('DOMContentLoaded', () => {
             } finally {
                 btnDownload.innerText = originalBtnText;
                 btnDownload.disabled = false;
-                btnDownload.style.backgroundColor = "#28a745"; // Reset to green
+                btnDownload.style.backgroundColor = "#28a745"; 
             }
         });
     }

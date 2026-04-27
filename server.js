@@ -1,3 +1,6 @@
+// Used to run the backend communication (download pdf, fetching templates)
+
+// configuring the .env file
 require('dotenv').config();
 
 const express = require('express');
@@ -6,7 +9,7 @@ const fs = require('fs');
 const path = require('path');
 const { exec } = require('child_process');
 const crypto = require('crypto');
-const { Pool } = require('pg'); // <-- NEW: Import pg
+const { Pool } = require('pg');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -15,7 +18,7 @@ app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.static(__dirname));
 
-// --- NEW: Database Connection ---
+// Connecting to database
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
     ssl: {
@@ -23,7 +26,7 @@ const pool = new Pool({
     }
 });
 
-// --- NEW: API Endpoint to fetch templates ---
+// Fetching templates
 app.get('/api/templates', async (req, res) => {
     try {
         const result = await pool.query('SELECT * FROM templates ORDER BY title ASC');
@@ -34,7 +37,7 @@ app.get('/api/templates', async (req, res) => {
     }
 });
 
-// --- PDF Compilation Endpoint (Remains exactly the same) ---
+// Complining Latex code to make downloadable pdf
 app.post('/api/compile-pdf', (req, res) => {
     const latexString = req.body.latex;
 
