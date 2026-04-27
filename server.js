@@ -17,11 +17,10 @@ app.use(express.static(__dirname));
 
 // --- NEW: Database Connection ---
 const pool = new Pool({
-    user: 'postgres',
-    host: 'localhost',
-    database: 'cvbuilder',
-    password: process.env.DB_PASSWORD,
-    port: 5432,
+    connectionString: process.env.DATABASE_URL,
+    ssl: {
+        rejectUnauthorized: false
+    }
 });
 
 // --- NEW: API Endpoint to fetch templates ---
