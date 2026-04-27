@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     try {
         // Fetch from our new PostgreSQL backend route
-        const response = await fetch('http://localhost:3000/api/templates');
+        const response = await fetch('/api/templates');
         const dbTemplates = await response.json();
         
         window.resumeTemplates = dbTemplates;
@@ -635,7 +635,7 @@ document.addEventListener('DOMContentLoaded', () => {
             btnDownload.style.backgroundColor = "#218838"; // Darker green while compiling
 
             try {
-                const response = await fetch('http://localhost:3000/api/compile-pdf', {
+                const response = await fetch('/api/compile-pdf', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ latex: compiledCode })
@@ -658,7 +658,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             } catch (error) {
                 console.error(error);
-                alert("Error compiling PDF. Make sure your Node.js server is running on localhost:3000.");
+                alert("Error compiling PDF. Make sure your Node.js server is running.");
             } finally {
                 btnDownload.innerText = originalBtnText;
                 btnDownload.disabled = false;
